@@ -1,0 +1,8 @@
+<launch>
+ <node name="LD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_node" output="screen" >
+ <param name="product_name" value="LDLiDAR_LD06"/>
+ <param name="topic_name" value="LiDAR/LD06"/>
+ <param name="port_name" value ="/dev/ttyUSB0"/>
+ <param name="frame_id" value="lidar_frame"/>
+ </node>
+</launch>
