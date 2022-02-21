@@ -42,12 +42,7 @@ int main(int argc, char **argv) {
 	n.getParam("port_name", port_name);
 	n.getParam("frame_id", frame_id);
   
-  // std::cout << "[ldrobot] SDK Pack Version is " << "v2.2.1" << std::endl;
-	// std::cout << "[ldrobot] "
-  //           << " <topic_name>: " << topic_name
-  //           << " <port_name>: "  << port_name
-  //           << " <frame_id>: "   << frame_id << std::endl;
-  ROS_INFO("[ldrobot] SDK Pack Version is v2.2.1");
+  ROS_INFO("[ldrobot] SDK Pack Version is v2.2.2");
   ROS_INFO("[ldrobot] <product_name>: %s,<topic_name>: %s,<port_name>: %s,<frame_id>: %s", 
     product_name.c_str(), topic_name.c_str(), port_name.c_str(), frame_id.c_str());
 
@@ -56,11 +51,9 @@ int main(int argc, char **argv) {
   CmdInterfaceLinux cmd_port;
 
   if (port_name.empty()) {
-    // std::cout << "[ldrobot] Can't find LiDAR LD06 device" << std::endl;
     ROS_ERROR("[ldrobot] Can't find %s device", product_name.c_str());
     exit(EXIT_FAILURE);
   } else {
-    // std::cout << "[ldrobot] FOUND LiDAR_LD06" << std::endl;
     ROS_INFO("[ldrobot] FOUND %s device", product_name.c_str());
     cmd_port.SetReadCallback([&lidar](const char *byte, size_t len) {
       if (lidar->Parse((uint8_t *)byte, len)) {
@@ -70,10 +63,8 @@ int main(int argc, char **argv) {
   }
 
   if (cmd_port.Open(port_name)) {
-    // std::cout << "[ldrobot] open LiDAR_LD06 device  " << port_name  << " success!"<< std::endl;
     ROS_INFO("[ldrobot] open %s device %s is success!", product_name.c_str(), port_name.c_str());
   }else {
-    // std::cout << "[ldrobot] open LiDAR_LD06 device  " << port_name << " fail!"<< std::endl;
     ROS_INFO("[ldrobot] open %s device %s is fail!", product_name.c_str(), port_name.c_str());
     exit(EXIT_FAILURE);
   }

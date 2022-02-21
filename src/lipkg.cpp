@@ -239,9 +239,10 @@ void LiPkg::ToLaserscan(std::vector<PointData> src) {
     unsigned int last_index = 0;
     for (auto point : src) {
       float range = point.distance / 1000.f;  // distance unit transform to meters
-      float angle = ANGLE_TO_RADIAN(point.angle);
+      float dir_angle = static_cast<float>(360.f - point.angle); // Lidar rotation data flow changed from clockwise to counterclockwise
+      float angle = ANGLE_TO_RADIAN(dir_angle); // Lidar angle unit form degree transform to radian
       unsigned int index = (unsigned int)((angle - output_.angle_min) / output_.angle_increment);
-      if (index >= 0 && index < beam_size) {
+      if (index < beam_size) {
         // If the current content is Nan, it is assigned directly
         if (std::isnan(output_.ranges[index])) {
           output_.ranges[index] = range;
