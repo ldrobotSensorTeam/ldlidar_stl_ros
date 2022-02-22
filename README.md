@@ -42,10 +42,12 @@ $ sudo chmod 777 /dev/ttyUSB0
 ```
 ## 2. 编译方法
 
-使用catkin编译，在readme文件所在目录下执行如下指令.
+使用catkin编译.
 
 ```bash
-catkin_make
+$ cd ~/ldlidar_ros_ws
+
+$ catkin_make
 ```
 ## 3. 运行方法
 
@@ -120,10 +122,12 @@ $ sudo chmod 777 /dev/ttyUSB0
 ```
 ## step 2: build
 
-Run the following command in the directory where the readme file resides.
+Run the following command.
 
 ```bash
-catkin_make
+$ cd ~/ldlidar_ros_ws
+
+$ catkin_make
 ```
 ## step 3: run
 
