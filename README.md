@@ -148,7 +148,7 @@ source devel/setup.bash
 
 > The code was tested under ubuntu16.04 ROS kinetic、ubuntu18.04 ROS melodic、ubuntu20.04 ROS noetic, using rviz visualization.
 
-- new a terminal (Ctrl + Alt + T) and use Rviz2 tool,open the `ldlidar.rviz` file below the rviz folder of the readme file directory
+- new a terminal (Ctrl + Alt + T) and use Rviz tool,open the `ldlidar.rviz` file below the rviz folder of the readme file directory
 ```bash
 rosrun rviz rviz
 ```
