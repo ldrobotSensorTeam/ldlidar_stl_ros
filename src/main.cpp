@@ -36,18 +36,28 @@ int main(int argc, char **argv) {
 	std::string topic_name;
 	std::string port_name;
 	std::string frame_id;
+  bool laser_scan_dir = true;
+  bool enable_angle_crop_func = false;
+  double angle_crop_min = 0.0;
+  double angle_crop_max = 0.0;
 
   n.getParam("product_name", product_name);
 	n.getParam("topic_name", topic_name);
 	n.getParam("port_name", port_name);
 	n.getParam("frame_id", frame_id);
+  n.getParam("laser_scan_dir", laser_scan_dir);
+  n.getParam("enable_angle_crop_func", enable_angle_crop_func);
+  n.getParam("angle_crop_min", angle_crop_min);
+  n.getParam("angle_crop_max", angle_crop_max);
   
-  ROS_INFO("[ldrobot] SDK Pack Version is v2.2.5");
+  ROS_INFO("[ldrobot] SDK Pack Version is v2.2.6");
   ROS_INFO("[ldrobot] <product_name>: %s,<topic_name>: %s,<port_name>: %s,<frame_id>: %s", 
     product_name.c_str(), topic_name.c_str(), port_name.c_str(), frame_id.c_str());
 
+  ROS_INFO("[ldrobot] <laser_scan_dir>: %s,<enable_angle_crop_func>: %s,<angle_crop_min>: %f,<angle_crop_max>: %f",
+   (laser_scan_dir?"Counterclockwise":"Clockwise"), (enable_angle_crop_func?"true":"false"), angle_crop_min, angle_crop_max);
 
-  LiPkg *lidar = new LiPkg(frame_id);
+  LiPkg *lidar = new LiPkg(frame_id, laser_scan_dir, enable_angle_crop_func, angle_crop_min, angle_crop_max);
   CmdInterfaceLinux cmd_port;
 
   if (port_name.empty()) {
@@ -78,21 +88,8 @@ int main(int argc, char **argv) {
     if (lidar->IsFrameReady()) {
       lidar_pub.publish(lidar->GetLaserScan());  // Fixed Frame:  lidar_frame
       lidar->ResetFrameReady();
-#if 0 
-			sensor_msgs::LaserScan data = lidar->GetLaserScan();
-			unsigned int lens = (data.angle_max - data.angle_min) / data.angle_increment;  
-			std::cout << "[ldrobot] current_speed: " << lidar->GetSpeed() << " " 
-			          << "len: " << lens << " "
-					  << "angle_min: " << RADIAN_TO_ANGLED(data.angle_min) << " "
-					  << "angle_max: " << RADIAN_TO_ANGLED(data.angle_max) << std::endl; 
-			std::cout << "----------------------------" << std::endl;
-			for (unsigned int i = 0; i < lens; i++)
-			{
-				std::cout << "[ldrobot] range: " <<  data.ranges[i] << " " 
-						  << "intensites: " <<  data.intensities[i] << std::endl;
-			}
-			std::cout << "----------------------------" << std::endl;
-#endif
+			ROS_INFO_STREAM("[ldrobot] current_speed(Hz): " << lidar->GetSpeed()); 
+			ROS_INFO_STREAM("----^---^-----");
     }
     r.sleep();
   }

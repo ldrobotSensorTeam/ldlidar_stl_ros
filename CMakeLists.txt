@@ -137,10 +137,12 @@ ${catkin_INCLUDE_DIRS}
 #endif()
 
 file(GLOB  MAIN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
-
 add_executable(${PROJECT_NAME}_node  ${MAIN_SRC})
 target_link_libraries(${PROJECT_NAME}_node pthread ${catkin_LIBRARIES})
 
+file(GLOB  SRC ${CMAKE_CURRENT_SOURCE_DIR}/listen/*.cpp)
+add_executable(${PROJECT_NAME}_listen_node  ${SRC})
+target_link_libraries(${PROJECT_NAME}_listen_node  ${catkin_LIBRARIES})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
