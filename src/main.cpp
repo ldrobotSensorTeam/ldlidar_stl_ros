@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
   n.getParam("angle_crop_min", angle_crop_min);
   n.getParam("angle_crop_max", angle_crop_max);
   
-  ROS_INFO("[ldrobot] SDK Pack Version is v2.2.6");
+  ROS_INFO("[ldrobot] SDK Pack Version is v2.2.7");
   ROS_INFO("[ldrobot] <product_name>: %s,<topic_name>: %s,<port_name>: %s,<frame_id>: %s", 
     product_name.c_str(), topic_name.c_str(), port_name.c_str(), frame_id.c_str());
 
