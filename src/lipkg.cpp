@@ -210,12 +210,12 @@ void LiPkg::ToLaserscan(std::vector<PointData> src) {
   range_max = 12;
   angle_increment = ANGLE_TO_RADIAN(speed_ / kPointFrequence);
   static uint16_t last_times_stamp = 0;
-  uint16_t dealt_times_stamp = 0;
+  float dealt_times_stamp = 0;
   uint16_t tmp_times_stamp = GetTimestamp();
   if (tmp_times_stamp - last_times_stamp < 0) {
-    dealt_times_stamp = tmp_times_stamp - last_times_stamp + 30000;
+    dealt_times_stamp = (tmp_times_stamp - last_times_stamp + 30000) / 1000.f;
   } else {
-    dealt_times_stamp = tmp_times_stamp - last_times_stamp;
+    dealt_times_stamp = (tmp_times_stamp - last_times_stamp) / 1000.f;
   }
   last_times_stamp = tmp_times_stamp;
   // Calculate the number of scanning points
@@ -228,8 +228,12 @@ void LiPkg::ToLaserscan(std::vector<PointData> src) {
     output_.range_min = range_min;
     output_.range_max = range_max;
     output_.angle_increment = angle_increment;
-    output_.time_increment = dealt_times_stamp;
-    output_.scan_time = 0.0;
+    if (beam_size <= 1) {
+      output_.time_increment = 0;
+    } else {
+      output_.time_increment = dealt_times_stamp/(beam_size-1);
+    }
+    output_.scan_time = dealt_times_stamp;
     // First fill all the data with Nan
     output_.ranges.assign(beam_size, std::numeric_limits<float>::quiet_NaN());
     output_.intensities.assign(beam_size, std::numeric_limits<float>::quiet_NaN());
@@ -241,8 +245,7 @@ void LiPkg::ToLaserscan(std::vector<PointData> src) {
       float dir_angle;
 
       if (laser_scan_dir_) {
-        dir_angle = static_cast<float>(360.f - point.angle); // Lidar rotation data flow changed 
-                                                             // from clockwise to counterclockwise
+        dir_angle = static_cast<float>(360.f - point.angle); // Lidar rotation data flow changed from clockwise to counterclockwise
       } else {
         dir_angle = point.angle;
       }
