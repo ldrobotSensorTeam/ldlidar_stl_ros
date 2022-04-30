@@ -35,9 +35,9 @@ $ sudo chmod 777 /dev/ttyUSB0
 <!-- ldldiar message publisher node -->
  <node name="LD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_node" output="screen" >
   <param name="product_name" value="LDLiDAR_LD06"/>
-  <param name="topic_name" value="LiDAR/LD06"/>
+  <param name="topic_name" value="scan"/>
   <param name="port_name" value ="/dev/ttyUSB0"/>
-  <param name="frame_id" value="lidar_frame"/>
+  <param name="frame_id" value="base_laser"/>
   <!-- Set laser scan directon: -->
   <!--    1. Set counterclockwise, example: <param name="laser_scan_dir" type="bool" value="true"/> -->
   <!--    2. Set clockwise,        example: <param name="laser_scan_dir" type="bool" value="false"/> -->
@@ -54,8 +54,11 @@ $ sudo chmod 777 /dev/ttyUSB0
  </node>
 <!-- ldlidar message subscriber node -->
  <node name="ListenLD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_listen_node" output="screen">
-  <param name="topic_name" value="LiDAR/LD06"/>
+  <param name="topic_name" value="scan"/>
  </node>
+ <!-- publisher tf transform, parents frame is base_link, child frame is base_laser -->
+ <!-- args="x y z yaw pitch roll parents_frame_id child_frame_id period_in_ms"-->
+ <node name="base_to_laser" pkg="tf" type="static_transform_publisher"  args="0.0 0.0 0.18 0 0.0 0.0 base_link base_laser 50"/>
 </launch>
 ```
 ## 2. 编译方法
@@ -87,30 +90,44 @@ $ catkin_make
 ### 3.2. 启动激光雷达节点
 
 - 产品型号为 LDROBOT LiDAR LD06
-
+  - 启动ld06 lidar node:
   ``` bash
-  roslaunch ldlidar_stl_ros ld06.launch
+  $ roslaunch ldlidar_stl_ros ld06.launch
+  ```
+  - 启动ld06 lidar node并显示激光数据在Rviz上:
+  ``` bash
+  # if ROS_DISTRO in 'kinetic' or 'melodic'
+  $ roslaunch ldlidar_stl_ros viewer_ld06_kinetic_melodic.launch
+  # if ROS_DISTRO in 'noetic'
+  $ roslaunch ldlidar_stl_ros viewer_ld06_noetic.launch
   ```
 
 - 产品型号为 LDROBOT LiDAR LD19
-
+  - 启动ld19 lidar node:
   ``` bash
-  roslaunch ldlidar_stl_ros ld19.launch
+  $ roslaunch ldlidar_stl_ros ld19.launch
+  ```
+  - 启动ld19 lidar node并显示激光数据在Rviz上:
+  ``` bash
+  # if ROS_DISTRO in 'kinetic' or 'melodic'
+  $ roslaunch ldlidar_stl_ros viewer_ld19_kinetic_melodic.launch
+  # if ROS_DISTRO in 'noetic'
+  $ roslaunch ldlidar_stl_ros viewer_ld19_noetic.launch
   ```
 
 ##   4. 测试
 
 > 代码支持ubuntu16.04 ROS kinetic、ubuntu18.04 ROS melodic、ubuntu20.04 ROS noetic版本下测试，使用rviz可视化。
 
-- 新打开一个终端 (Ctrl + Alt + T),并通过Rviz工具打开readme文件所在目录的rviz文件夹下面的ldlidar.rviz文件
+- 新打开一个终端 (Ctrl + Alt + T),并通过Rviz工具打开readme文件所在目录的rviz文件夹下面的rviz配置文件
 ```bash
-rosrun rviz rviz
+$ rviz
 ```
 
 | 产品型号:          | Fixed Frame: | Topic:        |
 | ------------------ | ------------ | ------------- |
-| LDROBOT LiDAR LD06 | lidar_frame  | /LiDAR/LD06 |
-| LDROBOT LiDAR LD19 | lidar_frame  | /LiDAR/LD19 |
+| LDROBOT LiDAR LD06 | base_laser  | /scan |
+| LDROBOT LiDAR LD19 | base_laser  | /scan |
 
 
 # Instructions
@@ -149,9 +166,9 @@ $ sudo chmod 777 /dev/ttyUSB0
 <!-- ldldiar message publisher node -->
  <node name="LD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_node" output="screen" >
   <param name="product_name" value="LDLiDAR_LD06"/>
-  <param name="topic_name" value="LiDAR/LD06"/>
+  <param name="topic_name" value="scan"/>
   <param name="port_name" value ="/dev/ttyUSB0"/>
-  <param name="frame_id" value="lidar_frame"/>
+  <param name="frame_id" value="base_laser"/>
   <!-- Set laser scan directon: -->
   <!--    1. Set counterclockwise, example: <param name="laser_scan_dir" type="bool" value="true"/> -->
   <!--    2. Set clockwise,        example: <param name="laser_scan_dir" type="bool" value="false"/> -->
@@ -168,8 +185,11 @@ $ sudo chmod 777 /dev/ttyUSB0
  </node>
 <!-- ldlidar message subscriber node -->
  <node name="ListenLD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_listen_node" output="screen">
-  <param name="topic_name" value="LiDAR/LD06"/>
+  <param name="topic_name" value="scan"/>
  </node>
+ <!-- publisher tf transform, parents frame is base_link, child frame is base_laser -->
+ <!-- args="x y z yaw pitch roll parents_frame_id child_frame_id period_in_ms"-->
+ <node name="base_to_laser" pkg="tf" type="static_transform_publisher"  args="0.0 0.0 0.18 0 0.0 0.0 base_link base_laser 50"/>
 </launch>
 ```
 ## step 2: build
@@ -201,25 +221,41 @@ $ catkin_make
 ### step3.2: start LiDAR node
 
 - The product is LDROBOT LiDAR LD06
-
+  - start ld06 lidar node:
   ``` bash
-  roslaunch ldlidar_stl_ros ld06.launch
+  $ roslaunch ldlidar_stl_ros ld06.launch
   ```
+  - start ld06 lidar node and show on the Rviz:
+  ``` bash
+  # if ROS_DISTRO in 'kinetic' or 'melodic'
+  $ roslaunch ldlidar_stl_ros viewer_ld06_kinetic_melodic.launch
+  # if ROS_DISTRO in 'noetic'
+  $ roslaunch ldlidar_stl_ros viewer_ld06_noetic.launch
+  ```
+  
 - The product is LDROBOT LiDAR LD19
-
+  - start ld19 lidar node:
   ``` bash
-  roslaunch ldlidar_stl_ros ld19.launch
+  $ roslaunch ldlidar_stl_ros ld19.launch
   ```
+  - start ld19 lidar node and show on the Rviz:
+  ``` bash
+  # if ROS_DISTRO in 'kinetic' or 'melodic'
+  $ roslaunch ldlidar_stl_ros viewer_ld19_kinetic_melodic.launch
+  # if ROS_DISTRO in 'noetic'
+  $ roslaunch ldlidar_stl_ros viewer_ld19_noetic.launch
+  ```
+
 ## step 4: test
 
 > The code was tested under ubuntu16.04 ROS kinetic、ubuntu18.04 ROS melodic、ubuntu20.04 ROS noetic, using rviz visualization.
 
-- new a terminal (Ctrl + Alt + T) and use Rviz tool,open the `ldlidar.rviz` file below the rviz folder of the readme file directory
+- new a terminal (Ctrl + Alt + T) and use Rviz tool,open the rviz config file below the rviz folder of the readme file directory
 ```bash
-rosrun rviz rviz
+$ rviz
 ```
 
 | Product:          | Fixed Frame: | Topic:        |
 | ------------------ | ------------ | ------------- |
-| LDROBOT LiDAR LD06 | lidar_frame  | /LiDAR/LD06   |
-| LDROBOT LiDAR LD19 | lidar_frame  | /LiDAR/LD19   |
+| LDROBOT LiDAR LD06 | base_laser  | /scan   |
+| LDROBOT LiDAR LD19 | base_laser  | /scan   |

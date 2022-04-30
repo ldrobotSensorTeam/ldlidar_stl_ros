@@ -252,8 +252,8 @@ void LiPkg::ToLaserscan(std::vector<PointData> src) {
 
       if (enable_angle_crop_func_) { // Angle crop setting, Mask data within the set angle range
         if ((dir_angle >= angle_crop_min_) && (dir_angle <= angle_crop_max_)) {
-          range = 0;
-          intensity = 0;
+          range = std::numeric_limits<float>::quiet_NaN();
+          intensity = std::numeric_limits<float>::quiet_NaN();
         }
       }
 
