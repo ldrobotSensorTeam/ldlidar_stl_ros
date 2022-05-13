@@ -31,9 +31,13 @@
  * @param [in]
  *  @param speed  current lidar speed
  */
-Tofbf::Tofbf(int speed) { curr_speed_ = speed; }
+Tofbf::Tofbf(int speed) {
+  curr_speed_ = speed; 
+}
 
-Tofbf::~Tofbf() {}
+Tofbf::~Tofbf() {
+
+}
 
 /**
  * @brief Filter within 5m to filter out unreasonable data points
@@ -59,11 +63,8 @@ std::vector<PointData> Tofbf::NearFilter(
 
   double angle_delta_up_limit = curr_speed_ / kScanFrequency * 2;
 
-  // std::cout <<angle_delta_up_limit << std::endl; test code
-
   // sort
-  std::sort(pending.begin(), pending.end(),
-            [](PointData a, PointData b) { return a.angle < b.angle; });
+  std::sort(pending.begin(), pending.end(), [](PointData a, PointData b) { return a.angle < b.angle; });
 
   PointData last(-10, 0, 0);
   // group
@@ -86,10 +87,9 @@ std::vector<PointData> Tofbf::NearFilter(
   // Connection 0 degree and 359 degree
   auto first_item = group.front().front();
   auto last_item = group.back().back();
-  if (abs(first_item.angle + 360.f - last_item.angle) < angle_delta_up_limit &&
+  if (fabs(first_item.angle + 360.f - last_item.angle) < angle_delta_up_limit &&
       abs(first_item.distance - last_item.distance) < last.distance * 0.03) {
-    group.front().insert(group.front().begin(), group.back().begin(),
-                         group.back().end());
+    group.front().insert(group.front().begin(), group.back().begin(), group.back().end());
     group.erase(group.end() - 1);
   }
   // selection
@@ -108,24 +108,38 @@ std::vector<PointData> Tofbf::NearFilter(
         c += m.intensity;
       }
       c /= n.size();
-      if (c < kIntensitySingle) continue;
+      if (c < kIntensitySingle){
+        // continue;
+        for (auto& point: n) {
+          point.distance = 0;
+          point.intensity = 0;
+        }
+      } 
+    } else {
+      // Calculate the mean value of distance and intensity
+      double confidence_avg = 0;
+      double dis_avg = 0;
+      for (auto m : n) {
+        confidence_avg += m.intensity;
+        dis_avg += m.distance;
+      }
+      confidence_avg /= n.size();
+      dis_avg /= n.size();
+
+      // High intensity, no filtering
+      if (confidence_avg > kIntensityLow) {
+        // normal.insert(normal.end(), n.begin(), n.end());
+        // continue;
+      } else {
+        for (auto& point : n) {
+          point.distance = 0;
+          point.intensity = 0;
+        }
+        // normal.insert(normal.end(), n.begin(), n.end());
+      }
     }
 
-    // Calculate the mean value of distance and intensity
-    double confidence_avg = 0;
-    double dis_avg = 0;
-    for (auto m : n) {
-      confidence_avg += m.intensity;
-      dis_avg += m.distance;
-    }
-    confidence_avg /= n.size();
-    dis_avg /= n.size();
-
-    // High intensity, no filtering
-    if (confidence_avg > kIntensityLow) {
-      normal.insert(normal.end(), n.begin(), n.end());
-      continue;
-    }
+    normal.insert(normal.end(), n.begin(), n.end());
   }
 
   return normal;

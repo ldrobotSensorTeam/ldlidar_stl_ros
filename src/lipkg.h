@@ -22,12 +22,14 @@
 #ifndef __LIPKG_H
 #define __LIPKG_H
 
-#include <sensor_msgs/LaserScan.h>
+#include "ros_api.h"
 #include <stdint.h>
 
 #include <array>
 #include <iostream>
 #include <vector>
+#include <mutex>
+#include <functional>
 
 #include "pointdata.h"
 
@@ -60,22 +62,15 @@ class LiPkg {
   // get Lidar spin speed (Hz)
   double GetSpeed(void); 
   // get time stamp of the packet
-  uint16_t GetTimestamp(void) { return timestamp_; }  
-  // a packet is ready                                              
-  bool IsPkgReady(void) { return is_pkg_ready_; }  
+  uint16_t GetTimestamp(void);  
   // Get lidar data frame ready flag  
-  bool IsFrameReady(void) { return is_frame_ready_; }  
+  bool IsFrameReady(void);  
   // Lidar data frame readiness flag reset
-  void ResetFrameReady(void) { is_frame_ready_ = false; }
+  void ResetFrameReady(void);
+  void SetFrameReady(void);
   // the number of errors in parser process of lidar data frame
-  long GetErrorTimes(void) { return error_times_; } 
-  // Get original Lidar data package
-  const std::array<PointData, POINT_PER_PACK>& GetPkgData(void);  
-  // parse single packet
-  bool AnalysisOne(uint8_t byte);
-  bool Parse(const uint8_t* data, long len);  
-  // combine stantard data into data frames and calibrate
-  bool AssemblePacket();  
+  long GetErrorTimes(void);  
+  void CommReadCallback(const char *byte, size_t len);
   // Get sensor_msg/LaserScan type data
   sensor_msgs::LaserScan GetLaserScan() { return output_; }
 
@@ -85,7 +80,6 @@ class LiPkg {
   uint16_t timestamp_;
   double speed_;
   long error_times_;
-  bool is_pkg_ready_;
   bool is_frame_ready_;
   bool laser_scan_dir_;
   bool enable_angle_crop_func_;
@@ -93,11 +87,16 @@ class LiPkg {
   double angle_crop_max_;
   LiDARFrameTypeDef pkg;
   std::vector<uint8_t> data_tmp_;
-  std::array<PointData, POINT_PER_PACK> one_pkg_;
   std::vector<PointData> frame_tmp_;
+  std::mutex  mutex_lock;
   sensor_msgs::LaserScan output_;
-  // Lidar frame data tranfrom to  sensor_msg/LaserScan type data
-  void ToLaserscan(std::vector<PointData> src);
+
+   // parse single packet
+  bool AnalysisOne(uint8_t byte);
+  bool Parse(const uint8_t* data, long len);  
+  // combine stantard data into data frames and calibrate
+  bool AssemblePacket();  
+  void ToLaserscan(std::vector<PointData>& src);
 };
 
 #endif  //__LIPKG_H

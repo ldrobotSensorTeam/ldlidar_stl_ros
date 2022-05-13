@@ -26,7 +26,7 @@
 
 #include <vector>
 
-#include "lipkg.h"
+#include "pointdata.h"
 
 class Tofbf {
  private:

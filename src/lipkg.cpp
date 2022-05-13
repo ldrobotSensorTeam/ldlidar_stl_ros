@@ -67,15 +67,13 @@ LiPkg::LiPkg(std::string frame_id, bool laser_scan_dir, bool enable_angle_crop_f
       speed_(0),
       error_times_(0),
       is_frame_ready_(false),
-      is_pkg_ready_(false),
+      frame_id_(frame_id),
       laser_scan_dir_(laser_scan_dir),
       enable_angle_crop_func_(enable_angle_crop_func),
       angle_crop_min_(angle_crop_min),
       angle_crop_max_(angle_crop_max) {
-  frame_id_ = frame_id;
-}
 
-double LiPkg::GetSpeed(void) { return speed_ / 360.0; }
+}
 
 bool LiPkg::AnalysisOne(uint8_t byte) {
   static enum {
@@ -148,12 +146,8 @@ bool LiPkg::Parse(const uint8_t *data, long len) {
             data.angle -= 360.0;
           }
           data.intensity = pkg.point[i].intensity;
-          one_pkg_[i] = data;
           frame_tmp_.push_back(PointData(data.angle, data.distance, data.intensity));
         }
-        // prevent angle invert
-        one_pkg_.back().angle = end;
-        is_pkg_ready_ = true;
       }
     }
   }
@@ -170,20 +164,21 @@ bool LiPkg::AssemblePacket() {
     // wait for enough data, need enough data to show a circle
     // enough data has been obtained
     if ((n.angle < 20.0) && (last_angle > 340.0)) {
-      // std::cout << "count: " << count << std::endl;
       if ((count * GetSpeed()) > (kPointFrequence * 1.4)) {
         frame_tmp_.erase(frame_tmp_.begin(), frame_tmp_.begin() + count - 1);
         return false;
       }
       data.insert(data.begin(), frame_tmp_.begin(), frame_tmp_.begin() + count);
-      // std::cout << "data.size() " << data.size() << std::endl;
+      // ROS_INFO_STREAM("[ldrobot] filter front poit size: " << data.size());
       Tofbf tofbfLd06(speed_);
       tmp = tofbfLd06.NearFilter(data);
-
       std::sort(tmp.begin(), tmp.end(), [](PointData a, PointData b) { return a.angle < b.angle; });
+      // ROS_INFO_STREAM("[ldrobot] filter back poit size: " << tmp.size());
       if (tmp.size() > 0) {
-        ToLaserscan(tmp);
-        is_frame_ready_ = true;
+        if (tmp.front().angle < 1.0) {
+          ToLaserscan(tmp);
+          SetFrameReady();
+        }
         frame_tmp_.erase(frame_tmp_.begin(), frame_tmp_.begin() + count);
         return true;
       }
@@ -195,20 +190,53 @@ bool LiPkg::AssemblePacket() {
   return false;
 }
 
-const std::array<PointData, POINT_PER_PACK>& LiPkg::GetPkgData(void) {
-  is_pkg_ready_ = false;
-  return one_pkg_;
+double LiPkg::GetSpeed(void) {
+  return (speed_ / 360.0);  // unit is hz
 }
 
-void LiPkg::ToLaserscan(std::vector<PointData> src) {
-  float angle_min, angle_max, range_min, range_max, angle_increment;
+uint16_t LiPkg::GetTimestamp(void) {
+  return timestamp_; 
+}
 
+bool LiPkg::IsFrameReady(void) {
+  return is_frame_ready_; 
+}  
+
+void LiPkg::ResetFrameReady(void) {
+  {
+    std::lock_guard<std::mutex> lock(mutex_lock);
+    is_frame_ready_ = false;
+  }
+}
+
+void LiPkg::SetFrameReady(void) {
+  {
+    std::lock_guard<std::mutex> lock(mutex_lock);
+    is_frame_ready_ = true;
+  }
+}
+
+long LiPkg::GetErrorTimes(void) {
+  return error_times_; 
+}
+
+void LiPkg::CommReadCallback(const char *byte, size_t len) {
+  if (this->Parse((uint8_t *)byte, len)) {
+    this->AssemblePacket();
+  }
+}
+
+void LiPkg::ToLaserscan(std::vector<PointData>& src) {
+  float angle_min, angle_max, range_min, range_max, angle_increment;
   // Adjust the parameters according to the demand
   angle_min = ANGLE_TO_RADIAN(src.front().angle);
   angle_max = ANGLE_TO_RADIAN(src.back().angle);
   range_min = 0.02;
   range_max = 12;
   angle_increment = ANGLE_TO_RADIAN(speed_ / kPointFrequence);
+  // ROS_INFO_STREAM("[ldrobot] angle min: " << src.front().angle);
+  // ROS_INFO_STREAM("[ldrobot] angle max: " << src.back().angle);
+  // ROS_INFO_STREAM("[ldrobot] speed(hz): " << GetSpeed());
   static uint16_t last_times_stamp = 0;
   float dealt_times_stamp = 0;
   uint16_t tmp_times_stamp = GetTimestamp();
@@ -221,6 +249,7 @@ void LiPkg::ToLaserscan(std::vector<PointData> src) {
   // Calculate the number of scanning points
   if (speed_ > 0) {
     unsigned int beam_size = static_cast<unsigned int>(ceil((angle_max - angle_min) / angle_increment));
+    // ROS_INFO_STREAM("[ldrobot] beam_size: " << beam_size);
     output_.header.stamp = ros::Time::now();
     output_.header.frame_id = frame_id_;
     output_.angle_min = angle_min;
@@ -243,6 +272,11 @@ void LiPkg::ToLaserscan(std::vector<PointData> src) {
       float range = point.distance / 1000.f;  // distance unit transform to meters
       float intensity = point.intensity;      // laser receive intensity 
       float dir_angle;
+
+      if ((point.distance == 0) && (point.intensity == 0)) { // filter is handled to  0, Nan will be assigned variable.
+        range = std::numeric_limits<float>::quiet_NaN(); 
+        intensity = std::numeric_limits<float>::quiet_NaN();
+      }
 
       if (laser_scan_dir_) {
         dir_angle = static_cast<float>(360.f - point.angle); // Lidar rotation data flow changed from clockwise to counterclockwise

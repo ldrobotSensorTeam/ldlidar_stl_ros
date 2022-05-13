@@ -19,7 +19,7 @@
  * limitations under the License.
  */
 
-#include <ros/ros.h>
+#include "ros_api.h"
 #include <stdio.h>
 
 #include <iostream>
@@ -31,7 +31,7 @@
 int main(int argc, char **argv) {
   ros::init(argc, argv, "ldldiar_publisher");
   ros::NodeHandle nh;  // create a ROS Node
-  ros::NodeHandle n("~");
+  ros::NodeHandle nh_private("~");
   std::string product_name;
 	std::string topic_name;
 	std::string port_name;
@@ -41,16 +41,16 @@ int main(int argc, char **argv) {
   double angle_crop_min = 0.0;
   double angle_crop_max = 0.0;
 
-  n.getParam("product_name", product_name);
-	n.getParam("topic_name", topic_name);
-	n.getParam("port_name", port_name);
-	n.getParam("frame_id", frame_id);
-  n.getParam("laser_scan_dir", laser_scan_dir);
-  n.getParam("enable_angle_crop_func", enable_angle_crop_func);
-  n.getParam("angle_crop_min", angle_crop_min);
-  n.getParam("angle_crop_max", angle_crop_max);
+  nh_private.getParam("product_name", product_name);
+	nh_private.getParam("topic_name", topic_name);
+	nh_private.getParam("port_name", port_name);
+	nh_private.getParam("frame_id", frame_id);
+  nh_private.getParam("laser_scan_dir", laser_scan_dir);
+  nh_private.getParam("enable_angle_crop_func", enable_angle_crop_func);
+  nh_private.getParam("angle_crop_min", angle_crop_min);
+  nh_private.getParam("angle_crop_max", angle_crop_max);
   
-  ROS_INFO("[ldrobot] SDK Pack Version is v2.2.9");
+  ROS_INFO("[ldrobot] SDK Pack Version is v2.2.10");
   ROS_INFO("[ldrobot] <product_name>: %s,<topic_name>: %s,<port_name>: %s,<frame_id>: %s", 
     product_name.c_str(), topic_name.c_str(), port_name.c_str(), frame_id.c_str());
 
@@ -65,29 +65,23 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   } else {
     ROS_INFO("[ldrobot] FOUND %s device", product_name.c_str());
-    cmd_port.SetReadCallback([&lidar](const char *byte, size_t len) {
-      if (lidar->Parse((uint8_t *)byte, len)) {
-        lidar->AssemblePacket();
-      }
-    });
+    cmd_port.SetReadCallback(std::bind(&LiPkg::CommReadCallback, lidar, std::placeholders::_1, std::placeholders::_2));
   }
 
   if (cmd_port.Open(port_name)) {
     ROS_INFO("[ldrobot] open %s device %s is success!", product_name.c_str(), port_name.c_str());
   }else {
-    ROS_INFO("[ldrobot] open %s device %s is fail!", product_name.c_str(), port_name.c_str());
+    ROS_ERROR("[ldrobot] open %s device %s is fail!", product_name.c_str(), port_name.c_str());
     exit(EXIT_FAILURE);
   }
-    
-
+  
   ros::Publisher lidar_pub = nh.advertise<sensor_msgs::LaserScan>(topic_name, 10);  // create a ROS topic
   
   ros::Rate r(10); //10hz
-
   while (ros::ok()) {
     if (lidar->IsFrameReady()) {
-      lidar_pub.publish(lidar->GetLaserScan());  // Fixed Frame:  lidar_frame
       lidar->ResetFrameReady();
+      lidar_pub.publish(lidar->GetLaserScan());
 			ROS_INFO_STREAM("[ldrobot] current_speed(Hz): " << lidar->GetSpeed()); 
 			ROS_INFO_STREAM("----^---^-----");
     }
