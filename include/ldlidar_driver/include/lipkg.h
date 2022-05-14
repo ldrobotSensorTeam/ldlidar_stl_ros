@@ -22,7 +22,7 @@
 #ifndef __LIPKG_H
 #define __LIPKG_H
 
-#include "ros_api.h"
+// #include "ros_api.h"
 #include <stdint.h>
 
 #include <array>
@@ -57,10 +57,13 @@ typedef struct __attribute__((packed)) {
 
 class LiPkg {
  public:
-  LiPkg(std::string frame_id, bool laser_scan_dir, bool enable_angle_crop_func,
-  double angle_crop_min, double angle_crop_max);
+  const int kPointFrequence = 4500;
+
+  LiPkg(std::string product_name);
   // get Lidar spin speed (Hz)
   double GetSpeed(void); 
+  // get lidar spind speed (degree per second) origin
+  uint16_t GetSpeedOrigin(void);
   // get time stamp of the packet
   uint16_t GetTimestamp(void);  
   // Get lidar data frame ready flag  
@@ -71,32 +74,26 @@ class LiPkg {
   // the number of errors in parser process of lidar data frame
   long GetErrorTimes(void);  
   void CommReadCallback(const char *byte, size_t len);
-  // Get sensor_msg/LaserScan type data
-  sensor_msgs::LaserScan GetLaserScan() { return output_; }
-
+  Points2D GetLaserScanData(void);
+  
  private:
-  const int kPointFrequence = 4500;
-  std::string frame_id_;
+  std::string product_name_;
   uint16_t timestamp_;
   double speed_;
   long error_times_;
   bool is_frame_ready_;
-  bool laser_scan_dir_;
-  bool enable_angle_crop_func_;
-  double angle_crop_min_;
-  double angle_crop_max_;
-  LiDARFrameTypeDef pkg;
+  LiDARFrameTypeDef pkg_;
   std::vector<uint8_t> data_tmp_;
-  std::vector<PointData> frame_tmp_;
-  std::mutex  mutex_lock;
-  sensor_msgs::LaserScan output_;
+  Points2D frame_tmp_;
+  Points2D laser_scan_data_;
+  std::mutex  mutex_lock_;
 
    // parse single packet
   bool AnalysisOne(uint8_t byte);
   bool Parse(const uint8_t* data, long len);  
   // combine stantard data into data frames and calibrate
   bool AssemblePacket();  
-  void ToLaserscan(std::vector<PointData>& src);
+  void FillLaserScanData(Points2D& src);
 };
 
 #endif  //__LIPKG_H

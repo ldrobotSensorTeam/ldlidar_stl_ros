@@ -15,9 +15,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **/
-
-#include "listen_node.h"
-
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
 
@@ -28,16 +25,16 @@
 
 void LidarMsgCallback(const sensor_msgs::LaserScan::ConstPtr& data)
 {
-    unsigned int lens = static_cast<unsigned int>((data->angle_max - data->angle_min) / data->angle_increment);  
-    ROS_INFO_STREAM("[ldrobot] angle_min: " << RADIAN_TO_DEGREES(data->angle_min) << " "
-          << "angle_max: " << RADIAN_TO_DEGREES(data->angle_max)); 
-    ROS_INFO_STREAM("[ldrobot] point size: " << data->ranges.size());
-    for (unsigned int i = 0; i < lens; i++) {
-      ROS_INFO_STREAM("[ldrobot] angle: " << RADIAN_TO_DEGREES((data->angle_min + i * data->angle_increment)) << " "
-            <<  "range: " <<  data->ranges[i] << " " 
-            << "intensites: " <<  data->intensities[i]);
-    }
-    ROS_INFO_STREAM("----------------------------");
+  ROS_INFO_STREAM("[ldrobot]------listen lidar message-------");
+  unsigned int lens = static_cast<unsigned int>((data->angle_max - data->angle_min) / data->angle_increment);  
+  ROS_INFO_STREAM("[ldrobot] angle_min: " << RADIAN_TO_DEGREES(data->angle_min) << " "
+        << "angle_max: " << RADIAN_TO_DEGREES(data->angle_max)); 
+  ROS_INFO_STREAM("[ldrobot] point size: " << data->ranges.size());
+  for (unsigned int i = 0; i < lens; i++) {
+    ROS_INFO_STREAM("[ldrobot] angle: " << RADIAN_TO_DEGREES((data->angle_min + i * data->angle_increment)) << " "
+          <<  "range: " <<  data->ranges[i] << " " 
+          << "intensites: " <<  data->intensities[i]);
+  }
 }
 
 int main(int argc, char  **argv)

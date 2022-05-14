@@ -4,9 +4,11 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/include/**",
+                "${workspaceFolder}/include/ldlidar_driver/**",
                 "/usr/include/**",
-                "/opt/ros/kinetic/include/**",
-                "/opt/ros/noetic/include/**"
+                "/opt/ros/kinetic/include/**"/*,
+                "/opt/ros/noetic/include/**" */
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",

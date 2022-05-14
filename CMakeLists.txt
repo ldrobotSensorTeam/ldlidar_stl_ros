@@ -120,7 +120,8 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+${CMAKE_CURRENT_SOURCE_DIR}/include
+${CMAKE_CURRENT_SOURCE_DIR}/include/ldlidar_driver/include
 ${catkin_INCLUDE_DIRS}
 )
 
@@ -136,12 +137,14 @@ ${catkin_INCLUDE_DIRS}
 #  message("-- #define USE_SLBI")
 #endif()
 
-file(GLOB  MAIN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
-add_executable(${PROJECT_NAME}_node  ${MAIN_SRC})
+file(GLOB  LDLIDAR_DRIVER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/include/ldlidar_driver/*.cpp)
+file(GLOB  MAIN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/publish_node/*.cpp)
+file(GLOB  LISTEN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/listen_node/*.cpp)
+
+add_executable(${PROJECT_NAME}_node  ${MAIN_SRC} ${LDLIDAR_DRIVER_SRC})
 target_link_libraries(${PROJECT_NAME}_node pthread ${catkin_LIBRARIES})
 
-file(GLOB  SRC ${CMAKE_CURRENT_SOURCE_DIR}/listen/*.cpp)
-add_executable(${PROJECT_NAME}_listen_node  ${SRC})
+add_executable(${PROJECT_NAME}_listen_node  ${LISTEN_SRC})
 target_link_libraries(${PROJECT_NAME}_listen_node  ${catkin_LIBRARIES})
 
 ## Declare a C++ library
