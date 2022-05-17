@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   nh_private.param("angle_crop_min", setting.angle_crop_min, double(0.0));
   nh_private.param("angle_crop_max", setting.angle_crop_max, double(0.0));
   
-  ROS_INFO("[ldrobot] SDK Pack Version is v2.3.0");
+  ROS_INFO("[ldrobot] SDK Pack Version is v2.3.1");
   ROS_INFO("[ldrobot] <product_name>: %s,<topic_name>: %s,<port_name>: %s,<frame_id>: %s", 
     product_name.c_str(), topic_name.c_str(), port_name.c_str(), setting.frame_id.c_str());
 
@@ -89,6 +89,13 @@ int main(int argc, char **argv) {
 
 void  ToLaserscanMessagePublish(Points2D& src, LiPkg* commpkg, LaserScanSetting& setting, ros::Publisher& lidarpub) {
   float angle_min, angle_max, range_min, range_max, angle_increment;
+  float scan_time;
+  static ros::Time start_scan_time;
+  static ros::Time end_scan_time;
+
+  start_scan_time = ros::Time::now();
+  scan_time = (start_scan_time - end_scan_time).toSec();
+
   // Adjust the parameters according to the demand
   angle_min = ANGLE_TO_RADIAN(src.front().angle);
   angle_max = ANGLE_TO_RADIAN(src.back().angle);
@@ -100,15 +107,6 @@ void  ToLaserscanMessagePublish(Points2D& src, LiPkg* commpkg, LaserScanSetting&
   // ROS_INFO_STREAM("[ldrobot] angle min: " << src.front().angle);
   // ROS_INFO_STREAM("[ldrobot] angle max: " << src.back().angle);
   // ROS_INFO_STREAM("[ldrobot] speed(hz): " << GetSpeed());
-  static uint16_t last_times_stamp = 0;
-  float dealt_times_stamp = 0;
-  uint16_t tmp_times_stamp = commpkg->GetTimestamp();
-  if (tmp_times_stamp - last_times_stamp < 0) {
-    dealt_times_stamp = (tmp_times_stamp - last_times_stamp + 30000) / 1000.f;
-  } else {
-    dealt_times_stamp = (tmp_times_stamp - last_times_stamp) / 1000.f;
-  }
-  last_times_stamp = tmp_times_stamp;
 
   // Calculate the number of scanning points
   if (commpkg->GetSpeedOrigin() > 0) {
@@ -125,9 +123,9 @@ void  ToLaserscanMessagePublish(Points2D& src, LiPkg* commpkg, LaserScanSetting&
     if (beam_size <= 1) {
       output.time_increment = 0;
     } else {
-      output.time_increment = dealt_times_stamp/(beam_size-1);
+      output.time_increment = scan_time / (beam_size - 1);
     }
-    output.scan_time = dealt_times_stamp;
+    output.scan_time = scan_time;
     // First fill all the data with Nan
     output.ranges.assign(beam_size, std::numeric_limits<float>::quiet_NaN());
     output.intensities.assign(beam_size, std::numeric_limits<float>::quiet_NaN());
@@ -178,6 +176,7 @@ void  ToLaserscanMessagePublish(Points2D& src, LiPkg* commpkg, LaserScanSetting&
       }
     }
     lidarpub.publish(output);
+    end_scan_time = start_scan_time;
     ROS_INFO("[ldrobot] pub lidar data");
   } 
 }
