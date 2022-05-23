@@ -24,13 +24,16 @@
 
 // #include "ros_api.h"
 #include <stdint.h>
+#include <stdio.h>
 
-#include <array>
 #include <iostream>
 #include <vector>
 #include <mutex>
 #include <functional>
+#include <string>
+#include <chrono>
 
+#include "cmd_interface_linux.h"
 #include "pointdata.h"
 
 enum {
@@ -59,7 +62,8 @@ class LiPkg {
  public:
   const int kPointFrequence = 4500;
 
-  LiPkg(std::string product_name);
+  LiPkg();
+  ~LiPkg();
   // get Lidar spin speed (Hz)
   double GetSpeed(void); 
   // get lidar spind speed (degree per second) origin
@@ -77,7 +81,6 @@ class LiPkg {
   Points2D GetLaserScanData(void);
   
  private:
-  std::string product_name_;
   uint16_t timestamp_;
   double speed_;
   long error_times_;
@@ -86,7 +89,8 @@ class LiPkg {
   std::vector<uint8_t> data_tmp_;
   Points2D frame_tmp_;
   Points2D laser_scan_data_;
-  std::mutex  mutex_lock_;
+  std::mutex  mutex_lock1_;
+  std::mutex  mutex_lock2_;
 
    // parse single packet
   bool AnalysisOne(uint8_t byte);

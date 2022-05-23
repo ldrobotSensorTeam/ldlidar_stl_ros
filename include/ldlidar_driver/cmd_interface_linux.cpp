@@ -29,7 +29,7 @@
 
 #include <iostream>
 
-#define MAX_ACK_BUF_LEN 2304000
+#define MAX_ACK_BUF_LEN 4096
 
 CmdInterfaceLinux::CmdInterfaceLinux()
     : rx_thread_(nullptr), rx_count_(0), read_callback_(nullptr) {

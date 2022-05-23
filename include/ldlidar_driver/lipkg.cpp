@@ -61,13 +61,16 @@ uint8_t CalCRC8(const uint8_t *data, uint16_t data_len) {
   return crc;
 }
 
-LiPkg::LiPkg(std::string product_name)
-    : product_name_(product_name),
-      timestamp_(0),
+LiPkg::LiPkg()
+    : timestamp_(0),
       speed_(0),
       error_times_(0),
       is_frame_ready_(false){
 
+}
+
+LiPkg::~LiPkg() {
+  
 }
 
 bool LiPkg::AnalysisOne(uint8_t byte) {
@@ -124,7 +127,7 @@ bool LiPkg::Parse(const uint8_t *data, long len) {
     if (AnalysisOne(data[i])) {
       // parse a package is success
       double diff = (pkg_.end_angle / 100 - pkg_.start_angle / 100 + 360) % 360;
-      if (diff > (double)pkg_.speed * POINT_PER_PACK / kPointFrequence * 3 / 2) {
+      if (diff > (double)(pkg_.speed * POINT_PER_PACK / kPointFrequence * 3 / 2)) {
         error_times_++;
       } else {
         speed_ = pkg_.speed; // Degrees per second
@@ -132,7 +135,6 @@ bool LiPkg::Parse(const uint8_t *data, long len) {
         uint32_t diff = ((uint32_t)pkg_.end_angle + 36000 - (uint32_t)pkg_.start_angle) % 36000;
         float step = diff / (POINT_PER_PACK - 1) / 100.0;
         float start = (double)pkg_.start_angle / 100.0;
-        float end = (double)(pkg_.end_angle % 36000) / 100.0;
         PointData data;
         for (int i = 0; i < POINT_PER_PACK; i++) {
           data.distance = pkg_.point[i].distance;
@@ -164,16 +166,12 @@ bool LiPkg::AssemblePacket() {
         return false;
       }
       data.insert(data.begin(), frame_tmp_.begin(), frame_tmp_.begin() + count);
-      // ROS_INFO_STREAM("[ldrobot] filter front poit size: " << data.size());
-      Tofbf tofbfLd06(speed_);
-      tmp = tofbfLd06.NearFilter(data);
+      Tofbf tofFilter(speed_);
+      tmp = tofFilter.NearFilter(data);
       std::sort(tmp.begin(), tmp.end(), [](PointData a, PointData b) { return a.angle < b.angle; });
-      // ROS_INFO_STREAM("[ldrobot] filter back poit size: " << tmp.size());
       if (tmp.size() > 0) {
-        if (tmp.front().angle < 1.0) {
-          FillLaserScanData(tmp);
-          SetFrameReady();
-        }
+        FillLaserScanData(tmp);
+        SetFrameReady();
         frame_tmp_.erase(frame_tmp_.begin(), frame_tmp_.begin() + count);
         return true;
       }
@@ -202,17 +200,13 @@ bool LiPkg::IsFrameReady(void) {
 }  
 
 void LiPkg::ResetFrameReady(void) {
-  {
-    std::lock_guard<std::mutex> lock(mutex_lock_);
-    is_frame_ready_ = false;
-  }
+  std::lock_guard<std::mutex> lg(mutex_lock1_);
+  is_frame_ready_ = false;
 }
 
 void LiPkg::SetFrameReady(void) {
-  {
-    std::lock_guard<std::mutex> lock(mutex_lock_);
-    is_frame_ready_ = true;
-  }
+  std::lock_guard<std::mutex> lg(mutex_lock1_);
+  is_frame_ready_ = true;
 }
 
 long LiPkg::GetErrorTimes(void) {
@@ -226,10 +220,12 @@ void LiPkg::CommReadCallback(const char *byte, size_t len) {
 }
 
 Points2D LiPkg::GetLaserScanData(void) {
+  std::lock_guard<std::mutex> lg(mutex_lock2_);
   return laser_scan_data_;
 }
 
 void LiPkg::FillLaserScanData(Points2D& src) {
+  std::lock_guard<std::mutex> lg(mutex_lock2_);
   laser_scan_data_ = src;
 }
 
