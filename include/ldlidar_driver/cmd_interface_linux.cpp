@@ -19,15 +19,7 @@
 
 #include "cmd_interface_linux.h"
 
-#include <errno.h>
-#include <fcntl.h>
-#include <memory.h>
-#include <string.h>
-#include <sys/file.h>
-#include <termios.h>
-#include <unistd.h>
-
-#include <iostream>
+namespace ldlidar {
 
 #define MAX_ACK_BUF_LEN 4096
 
@@ -55,8 +47,8 @@ bool CmdInterfaceLinux::Open(std::string &port_name) {
     return false;
   }
 
-  options.c_cflag |= (tcflag_t)(CLOCAL | CREAD | CS8 | CRTSCTS);
-  options.c_cflag &= (tcflag_t) ~(CSTOPB | PARENB | PARODD);
+  options.c_cflag |= (tcflag_t)(CLOCAL | CREAD | CS8);
+  options.c_cflag &= (tcflag_t) ~(CSTOPB | PARENB);
   options.c_lflag &= (tcflag_t) ~(ICANON | ECHO | ECHOE | ECHOK | ECHONL |
                                   ISIG | IEXTEN);  //|ECHOPRT
   options.c_oflag &= (tcflag_t) ~(OPOST);
@@ -166,5 +158,6 @@ void CmdInterfaceLinux::RxThreadProc(void *param) {
   delete[] rx_buf;
 }
 
+} // namespace ldlidar
 /********************* (C) COPYRIGHT SHENZHEN LDROBOT CO., LTD *******END OF
  * FILE ********/

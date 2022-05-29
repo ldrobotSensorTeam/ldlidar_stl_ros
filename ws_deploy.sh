@@ -15,7 +15,8 @@ else
     cp ./launch ./${floder_name} -a
     cp ./rviz  ./${floder_name} -a
     cp ./src ./${floder_name} -a
-    cp ./listen ./${floder_name} -a
+    cp ./include ./${floder_name} -a
+    cp ./scripts ./${floder_name} -a
     zip -r ${floder_name}.zip ./${floder_name}
     rm -rf ./${floder_name}/
     echo "create ./${floder_name}.zip "

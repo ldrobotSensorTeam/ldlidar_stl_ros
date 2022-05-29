@@ -26,6 +26,11 @@
 #include <iostream>
 #include <vector>
 
+namespace ldlidar {
+
+#define ANGLE_TO_RADIAN(angle) ((angle)*3141.59 / 180000)
+#define RADIAN_TO_ANGLED(angle) ((angle)*180000 / 3141.59)
+
 struct PointData {
   // Polar coordinate representation
   float angle;         // Angle ranges from 0 to 359 degrees
@@ -52,8 +57,7 @@ struct PointData {
 
 typedef std::vector<PointData> Points2D;
 
-#define ANGLE_TO_RADIAN(angle) ((angle)*3141.59 / 180000)
-#define RADIAN_TO_ANGLED(angle) ((angle)*180000 / 3141.59)
+} // namespace ldlidar
 
 #endif  // _POINT_DATA_H_
 

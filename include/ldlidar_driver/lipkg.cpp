@@ -21,12 +21,7 @@
 
 #include "lipkg.h"
 
-#include <math.h>
-#include <string.h>
-
-#include <algorithm>
-
-#include "tofbf.h"
+namespace ldlidar {
 
 static const uint8_t CrcTable[256] = {
     0x00, 0x4d, 0x9a, 0xd7, 0x79, 0x34, 0xe3, 0xae, 0xf2, 0xbf, 0x68, 0x25,
@@ -62,7 +57,8 @@ uint8_t CalCRC8(const uint8_t *data, uint16_t data_len) {
 }
 
 LiPkg::LiPkg()
-    : timestamp_(0),
+    : sdk_pack_version_("v2.3.3"),
+      timestamp_(0),
       speed_(0),
       error_times_(0),
       is_frame_ready_(false){
@@ -71,6 +67,10 @@ LiPkg::LiPkg()
 
 LiPkg::~LiPkg() {
   
+}
+
+std::string LiPkg::GetSdkVersionNumber() {
+  return sdk_pack_version_;
 }
 
 bool LiPkg::AnalysisOne(uint8_t byte) {
@@ -170,7 +170,7 @@ bool LiPkg::AssemblePacket() {
       tmp = tofFilter.NearFilter(data);
       std::sort(tmp.begin(), tmp.end(), [](PointData a, PointData b) { return a.angle < b.angle; });
       if (tmp.size() > 0) {
-        FillLaserScanData(tmp);
+        SetLaserScanData(tmp);
         SetFrameReady();
         frame_tmp_.erase(frame_tmp_.begin(), frame_tmp_.begin() + count);
         return true;
@@ -224,10 +224,11 @@ Points2D LiPkg::GetLaserScanData(void) {
   return laser_scan_data_;
 }
 
-void LiPkg::FillLaserScanData(Points2D& src) {
+void LiPkg::SetLaserScanData(Points2D& src) {
   std::lock_guard<std::mutex> lg(mutex_lock2_);
   laser_scan_data_ = src;
 }
 
+} // namespace ldlidar
 /********************* (C) COPYRIGHT SHENZHEN LDROBOT CO., LTD *******END OF
  * FILE ********/

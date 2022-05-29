@@ -21,10 +21,7 @@
 
 #include "tofbf.h"
 
-#include <math.h>
-
-#include <algorithm>
-#include <iostream>
+namespace ldlidar {
 
 /**
  * @brief Construct a new Tofbf:: Tofbf object
@@ -145,5 +142,6 @@ std::vector<PointData> Tofbf::NearFilter(
   return normal;
 }
 
+} // namespace ldlidar
 /********************* (C) COPYRIGHT SHENZHEN LDROBOT CO., LTD *******END OF
  * FILE ********/

@@ -21,7 +21,7 @@
 #include "ros_api.h"
 #include "lipkg.h"
 
-void  ToLaserscanMessagePublish(Points2D& src, LiPkg* commpkg, LaserScanSetting& setting, ros::Publisher& lidarpub);
+void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg, LaserScanSetting& setting, ros::Publisher& lidarpub);
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "ldldiar_publisher");
@@ -40,22 +40,23 @@ int main(int argc, char **argv) {
   nh_private.param("enable_angle_crop_func", setting.enable_angle_crop_func, bool(false));
   nh_private.param("angle_crop_min", setting.angle_crop_min, double(0.0));
   nh_private.param("angle_crop_max", setting.angle_crop_max, double(0.0));
-  
-  ROS_INFO("[ldrobot] SDK Pack Version is v2.3.2");
+
+  ldlidar::LiPkg *lidar_commh = new ldlidar::LiPkg();
+  ldlidar::CmdInterfaceLinux *cmd_port = new ldlidar::CmdInterfaceLinux();
+
+  ROS_INFO_STREAM("[ldrobot] SDK Pack Version is: " << lidar_commh->GetSdkVersionNumber());
   ROS_INFO("[ldrobot] <product_name>: %s,<topic_name>: %s,<port_name>: %s,<frame_id>: %s", 
     product_name.c_str(), topic_name.c_str(), port_name.c_str(), setting.frame_id.c_str());
 
   ROS_INFO("[ldrobot] <laser_scan_dir>: %s,<enable_angle_crop_func>: %s,<angle_crop_min>: %f,<angle_crop_max>: %f",
    (setting.laser_scan_dir?"Counterclockwise":"Clockwise"), (setting.enable_angle_crop_func?"true":"false"), setting.angle_crop_min, setting.angle_crop_max);
 
-  LiPkg *lidar_commh = new LiPkg();
-  CmdInterfaceLinux *cmd_port = new CmdInterfaceLinux();
-
   if (port_name.empty()) {
     ROS_ERROR("[ldrobot] input <port_name> param is null");
     exit(EXIT_FAILURE);
   }
-  cmd_port->SetReadCallback(std::bind(&LiPkg::CommReadCallback, lidar_commh, std::placeholders::_1, std::placeholders::_2));
+
+  cmd_port->SetReadCallback(std::bind(&ldlidar::LiPkg::CommReadCallback, lidar_commh, std::placeholders::_1, std::placeholders::_2));
   
   if (cmd_port->Open(port_name)) {
     ROS_INFO("[ldrobot] open %s device %s is success", product_name.c_str(), port_name.c_str());
@@ -67,16 +68,18 @@ int main(int argc, char **argv) {
   ros::Publisher lidar_pub = nh.advertise<sensor_msgs::LaserScan>(topic_name, 10);  // create a ROS topic
   
   ros::Rate r(10); //10hz
+
   auto last_time = std::chrono::steady_clock::now();
+
   while (ros::ok()) {
     if (lidar_commh->IsFrameReady()) {
       lidar_commh->ResetFrameReady();
       last_time = std::chrono::steady_clock::now();
-      Points2D laserscandata = lidar_commh->GetLaserScanData();
+      ldlidar::Points2D laserscandata = lidar_commh->GetLaserScanData();
       ToLaserscanMessagePublish(laserscandata, lidar_commh, setting, lidar_pub);
     }
 
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-last_time).count() > 1000) { // 数据发布超时或者串口设备拔出处理
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-last_time).count() > 1000) { 
 			ROS_ERROR("[ldrobot] lidar pub data is time out, please check lidar device");
 			exit(EXIT_FAILURE);
 		}
@@ -93,7 +96,7 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-void  ToLaserscanMessagePublish(Points2D& src, LiPkg* commpkg, LaserScanSetting& setting, ros::Publisher& lidarpub) {
+void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg, LaserScanSetting& setting, ros::Publisher& lidarpub) {
   float angle_min, angle_max, range_min, range_max, angle_increment;
   float scan_time;
   ros::Time start_scan_time;
