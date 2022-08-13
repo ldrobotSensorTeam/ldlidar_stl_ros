@@ -44,12 +44,16 @@ int main(int argc, char **argv) {
   ldlidar::LiPkg *lidar_commh = new ldlidar::LiPkg();
   ldlidar::CmdInterfaceLinux *cmd_port = new ldlidar::CmdInterfaceLinux();
 
-  ROS_INFO_STREAM("[ldrobot] SDK Pack Version is: " << lidar_commh->GetSdkVersionNumber());
-  ROS_INFO("[ldrobot] <product_name>: %s,<topic_name>: %s,<port_name>: %s,<frame_id>: %s", 
-    product_name.c_str(), topic_name.c_str(), port_name.c_str(), setting.frame_id.c_str());
-
-  ROS_INFO("[ldrobot] <laser_scan_dir>: %s,<enable_angle_crop_func>: %s,<angle_crop_min>: %f,<angle_crop_max>: %f",
-   (setting.laser_scan_dir?"Counterclockwise":"Clockwise"), (setting.enable_angle_crop_func?"true":"false"), setting.angle_crop_min, setting.angle_crop_max);
+  ROS_INFO("[ldrobot] SDK Pack Version is:%s", lidar_commh->GetSdkVersionNumber().c_str());
+  ROS_INFO("[ldrobot] ROS param input:");
+  ROS_INFO("[ldrobot] <product_name>: %s", product_name.c_str());
+  ROS_INFO("[ldrobot] <topic_name>: %s", topic_name.c_str());
+  ROS_INFO("[ldrobot] <port_name>: %s", port_name.c_str());
+  ROS_INFO("[ldrobot] <frame_id>: %s", setting.frame_id.c_str());
+  ROS_INFO("[ldrobot] <laser_scan_dir>: %s", (setting.laser_scan_dir?"Counterclockwise":"Clockwise"));
+  ROS_INFO("[ldrobot] <enable_angle_crop_func>: %s", (setting.enable_angle_crop_func?"true":"false"));
+  ROS_INFO("[ldrobot] <angle_crop_min>: %f", setting.angle_crop_min);
+  ROS_INFO("[ldrobot] <angle_crop_max>: %f", setting.angle_crop_max);
 
   if (port_name.empty()) {
     ROS_ERROR("[ldrobot] input <port_name> param is null");
@@ -70,13 +74,17 @@ int main(int argc, char **argv) {
   ros::Rate r(10); //10hz
 
   auto last_time = std::chrono::steady_clock::now();
-
+  bool recv_success_flag = false;
   while (ros::ok()) {
     if (lidar_commh->IsFrameReady()) {
       lidar_commh->ResetFrameReady();
       last_time = std::chrono::steady_clock::now();
       ldlidar::Points2D laserscandata = lidar_commh->GetLaserScanData();
       ToLaserscanMessagePublish(laserscandata, lidar_commh, setting, lidar_pub);
+      if (!recv_success_flag) {
+        recv_success_flag = true;
+        ROS_INFO("[ldrobot] start normal, pub lidar data");
+      }
     }
 
     if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-last_time).count() > 1000) { 
@@ -187,7 +195,6 @@ void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg,
     }
     lidarpub.publish(output);
     end_scan_time = start_scan_time;
-    ROS_INFO("[ldrobot] pub lidar data");
   } 
 }
 
