@@ -66,7 +66,7 @@ sudo chmod 777 /dev/ttyUSB0
 ```bash
 cd ~/ldlidar_ros_ws
 
-rosdep install --from-paths src  -r -y
+rosdep install --from-paths src --ignore-src  -r -y
 ```
 - 使用catkin编译
 ```bash
@@ -203,7 +203,7 @@ sudo chmod 777 /dev/ttyUSB0
 ```bash
 cd ~/ldlidar_ros_ws
 
-rosdep install --from-paths src  -r -y
+rosdep install --from-paths src --ignore-src  -r -y
 ```
 
 - build compile
