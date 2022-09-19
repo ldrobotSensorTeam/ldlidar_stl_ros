@@ -2,7 +2,7 @@
 
 echo "delete remap the device serial port(ttyUSBX) to  ldlidar"
 echo "sudo rm   /etc/udev/rules.d/ldlidar.rules"
-sudo rm   /etc/udev/rules.d/ldlidar.rules
+sudo rm /etc/udev/rules.d/ldlidar.rules
 echo " "
 echo "Restarting udev"
 echo ""

@@ -21,7 +21,8 @@
 #include "ros_api.h"
 #include "lipkg.h"
 
-void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg, LaserScanSetting& setting, ros::Publisher& lidarpub);
+void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg, 
+    LaserScanSetting& setting, ros::Publisher& lidarpub);
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "ldldiar_publisher");
@@ -104,27 +105,33 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg, LaserScanSetting& setting, ros::Publisher& lidarpub) {
+void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg, 
+    LaserScanSetting& setting, ros::Publisher& lidarpub) {
   float angle_min, angle_max, range_min, range_max, angle_increment;
   float scan_time;
   ros::Time start_scan_time;
   static ros::Time end_scan_time;
+  static bool first_scan = true;
 
   start_scan_time = ros::Time::now();
   scan_time = (start_scan_time - end_scan_time).toSec();
 
+  if (first_scan) {
+    first_scan = false;
+    end_scan_time = start_scan_time;
+    return;
+  }
+
   // Adjust the parameters according to the demand
-  angle_min = ANGLE_TO_RADIAN(src.front().angle);
-  angle_max = ANGLE_TO_RADIAN(src.back().angle);
+  angle_min = 0;
+  angle_max = (2 * M_PI);
   range_min = 0.02;
   range_max = 12;
-  float spin_speed = static_cast<float>(commpkg->GetSpeedOrigin());
-  float scan_freq = static_cast<float>(commpkg->kPointFrequence);
-  angle_increment = ANGLE_TO_RADIAN(spin_speed/scan_freq);
+  int beam_size = static_cast<int>(src.size());
+  angle_increment = (angle_max - angle_min) / (float)(beam_size -1);
 
   // Calculate the number of scanning points
   if (commpkg->GetSpeedOrigin() > 0) {
-    int beam_size = static_cast<int>(ceil((angle_max - angle_min) / angle_increment));
     sensor_msgs::LaserScan output;
     output.header.stamp = start_scan_time;
     output.header.frame_id = setting.frame_id;
@@ -161,10 +168,11 @@ void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg,
       }
 
       float angle = ANGLE_TO_RADIAN(dir_angle); // Lidar angle unit form degree transform to radian
-      int index = (int)((angle - output.angle_min) / output.angle_increment);
+      int index = static_cast<int>(ceil((angle - angle_min) / angle_increment));
       if (index < beam_size) {
         if (index < 0) {
-          ROS_ERROR("[ldrobot] error index: %d, beam_size: %d, angle: %f, output.angle_min: %f, output.angle_increment: %f", index, beam_size, angle, output.angle_min, output.angle_increment);
+          ROS_ERROR("[ldrobot] error index: %d, beam_size: %d, angle: %f, angle_min: %f, angle_increment: %f", 
+              index, beam_size, angle, angle_min, angle_increment);
         }
 
         if (setting.laser_scan_dir) {

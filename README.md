@@ -31,13 +31,19 @@ sudo chmod 777 /dev/ttyUSB0
 - 第三步，修改`launch/`目录下雷达产品型号对应的lanuch文件中的`port_name`值，以ld06.launch为例，如下所示.
 
 ```xml
+<?xml version="1.0"?>
 <launch>
+<arg name="topic_name" default="scan"/>
+<arg name="frame_id" default="base_laser"/>
+<arg name="port_name" default="/dev/ttyUSB0"/>
+<arg name="fix_to_base_link" default="true" />
+
 <!-- ldldiar message publisher node -->
  <node name="LD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_node" output="screen" >
   <param name="product_name" value="LDLiDAR_LD06"/>
-  <param name="topic_name" value="scan"/>
-  <param name="port_name" value ="/dev/ttyUSB0"/>
-  <param name="frame_id" value="base_laser"/>
+  <param name="topic_name" value="$(arg topic_name)"/>
+  <param name="frame_id" value="$(arg frame_id)"/>
+  <param name="port_name" value ="$(arg port_name)"/>
   <!-- Set laser scan directon: -->
   <!--    1. Set counterclockwise, example: <param name="laser_scan_dir" type="bool" value="true"/> -->
   <!--    2. Set clockwise,        example: <param name="laser_scan_dir" type="bool" value="false"/> -->
@@ -53,12 +59,12 @@ sudo chmod 777 /dev/ttyUSB0
   <param name="angle_crop_max" type="double" value="225.0"/>
  </node>
 <!-- ldlidar message subscriber node -->
- <node name="ListenLD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_listen_node" output="screen">
+ <!-- node name="ListenLD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_listen_node" output="screen">
   <param name="topic_name" value="scan"/>
- </node>
+ </node -->
  <!-- publisher tf transform, parents frame is base_link, child frame is base_laser -->
  <!-- args="x y z yaw pitch roll parents_frame_id child_frame_id period_in_ms"-->
- <node name="base_to_laser" pkg="tf" type="static_transform_publisher"  args="0.0 0.0 0.18 0 0.0 0.0 base_link base_laser 50"/>
+ <node name="base_to_laser" pkg="tf" type="static_transform_publisher"  args="0.0 0.0 0.18 0 0.0 0.0 base_link base_laser 50" if="$(arg fix_to_base_link)"/>
 </launch>
 ```
 ## 2. 编译方法
@@ -129,13 +135,6 @@ catkin_make
 ```bash
 rviz
 ```
-
-| 产品型号:          | Fixed Frame: | Topic:        |
-| ------------------ | ------------ | ------------- |
-| LDROBOT LiDAR LD06 | base_laser  | /scan |
-| LDROBOT LiDAR LD19 | base_laser  | /scan |
-
-
 # Instructions
 
 > This SDK is only applicable to the LiDAR products sold by Shenzhen LDROBOT Co., LTD. The product models are :
@@ -168,13 +167,19 @@ sudo chmod 777 /dev/ttyUSB0
 - Modify the `port_name` value in the Lanuch file corresponding to the radar product model under `launch/`, using `ld06.launch` as an example, as shown below.
 
 ``` xml
+<?xml version="1.0"?>
 <launch>
+<arg name="topic_name" default="scan"/>
+<arg name="frame_id" default="base_laser"/>
+<arg name="port_name" default="/dev/ttyUSB0"/>
+<arg name="fix_to_base_link" default="true" />
+
 <!-- ldldiar message publisher node -->
  <node name="LD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_node" output="screen" >
   <param name="product_name" value="LDLiDAR_LD06"/>
-  <param name="topic_name" value="scan"/>
-  <param name="port_name" value ="/dev/ttyUSB0"/>
-  <param name="frame_id" value="base_laser"/>
+  <param name="topic_name" value="$(arg topic_name)"/>
+  <param name="frame_id" value="$(arg frame_id)"/>
+  <param name="port_name" value ="$(arg port_name)"/>
   <!-- Set laser scan directon: -->
   <!--    1. Set counterclockwise, example: <param name="laser_scan_dir" type="bool" value="true"/> -->
   <!--    2. Set clockwise,        example: <param name="laser_scan_dir" type="bool" value="false"/> -->
@@ -190,12 +195,12 @@ sudo chmod 777 /dev/ttyUSB0
   <param name="angle_crop_max" type="double" value="225.0"/>
  </node>
 <!-- ldlidar message subscriber node -->
- <node name="ListenLD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_listen_node" output="screen">
+ <!-- node name="ListenLD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_listen_node" output="screen">
   <param name="topic_name" value="scan"/>
- </node>
+ </node -->
  <!-- publisher tf transform, parents frame is base_link, child frame is base_laser -->
  <!-- args="x y z yaw pitch roll parents_frame_id child_frame_id period_in_ms"-->
- <node name="base_to_laser" pkg="tf" type="static_transform_publisher"  args="0.0 0.0 0.18 0 0.0 0.0 base_link base_laser 50"/>
+ <node name="base_to_laser" pkg="tf" type="static_transform_publisher"  args="0.0 0.0 0.18 0 0.0 0.0 base_link base_laser 50" if="$(arg fix_to_base_link)"/>
 </launch>
 ```
 ## step 2: build
@@ -267,8 +272,3 @@ catkin_make
 ```bash
 rviz
 ```
-
-| Product:          | Fixed Frame: | Topic:        |
-| ------------------ | ------------ | ------------- |
-| LDROBOT LiDAR LD06 | base_laser  | /scan   |
-| LDROBOT LiDAR LD19 | base_laser  | /scan   |
