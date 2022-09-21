@@ -125,31 +125,40 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-${CMAKE_CURRENT_SOURCE_DIR}/include
-${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/include
-${catkin_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/include/core/
+  ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/include/dataprocess/
+  ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/include/filter/
+  ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/include/logger/
+  ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/include/networkcom/
+  ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/include/serialcom/
+  ${catkin_INCLUDE_DIRS}
 )
 
-## Get current directory files
-#aux_source_directory(. file_name)
-#if(file_name MATCHES "slbf.cpp")
-#  add_definitions(-D"USE_SLBF")
-#  message("-- #define USE_SLBF")
-#endif()
+file(GLOB  LDLIDAR_DRI_CORE ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/src/core/*.cpp)
+file(GLOB  LDLIDAR_DRI_DATARPC ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/src/dataprocess/*.cpp)
+file(GLOB  LDLIDAR_DRI_FILTER ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/src/filter/*.cpp)
+file(GLOB  LDLIDAR_DRI_LOGGER ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/src/logger/*.cpp)
+file(GLOB  LDLIDAR_DRI_NETWORK ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/src/networkcom/*.cpp)
+file(GLOB  LDLIDAR_DRI_SERIAL ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/src/serialcom/*.cpp)
 
-#if(file_name MATCHES "slbi.cpp")
-#  add_definitions(-D"USE_SLBI")
-#  message("-- #define USE_SLBI")
-#endif()
-
-file(GLOB  LDLIDAR_DRIVER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/ldlidar_driver/*.cpp)
 file(GLOB  MAIN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/publish_node/*.cpp)
 file(GLOB  LISTEN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/listen_node/*.cpp)
 
-add_executable(${PROJECT_NAME}_node  ${MAIN_SRC} ${LDLIDAR_DRIVER_SRC})
+add_executable(${PROJECT_NAME}_node  
+  ${MAIN_SRC} 
+  ${LDLIDAR_DRI_CORE} 
+  ${LDLIDAR_DRI_DATARPC} 
+  ${LDLIDAR_DRI_FILTER} 
+  ${LDLIDAR_DRI_LOGGER} 
+  ${LDLIDAR_DRI_NETWORK} 
+  ${LDLIDAR_DRI_SERIAL}
+)
 target_link_libraries(${PROJECT_NAME}_node pthread ${catkin_LIBRARIES})
 
-add_executable(${PROJECT_NAME}_listen_node  ${LISTEN_SRC})
+add_executable(${PROJECT_NAME}_listen_node  
+  ${LISTEN_SRC}
+)
 target_link_libraries(${PROJECT_NAME}_listen_node  ${catkin_LIBRARIES})
 
 ## Declare a C++ library

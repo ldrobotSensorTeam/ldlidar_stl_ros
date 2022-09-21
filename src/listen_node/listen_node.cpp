@@ -44,7 +44,7 @@ int main(int argc, char  **argv)
   ros::NodeHandle n("~");
   std::string topic_name;
 
-  n.getParam("topic_name", topic_name);
+  n.param("topic_name", topic_name, std::string("scan"));
 
   if (topic_name.empty()) {
     ROS_ERROR("[ldrobot] [ldldiar_listen_node] input param <topic_name> is null");

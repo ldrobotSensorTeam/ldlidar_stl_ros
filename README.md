@@ -36,7 +36,8 @@ sudo chmod 777 /dev/ttyUSB0
 <arg name="topic_name" default="scan"/>
 <arg name="frame_id" default="base_laser"/>
 <arg name="port_name" default="/dev/ttyUSB0"/>
-<arg name="fix_to_base_link" default="true" />
+<arg name="port_baudrate" default="230400"/>
+<arg name="fix_to_base_link" default="true"/>
 
 <!-- ldldiar message publisher node -->
  <node name="LD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_node" output="screen" >
@@ -44,6 +45,7 @@ sudo chmod 777 /dev/ttyUSB0
   <param name="topic_name" value="$(arg topic_name)"/>
   <param name="frame_id" value="$(arg frame_id)"/>
   <param name="port_name" value ="$(arg port_name)"/>
+  <param name="port_baudrate" value ="$(arg port_baudrate)"/>
   <!-- Set laser scan directon: -->
   <!--    1. Set counterclockwise, example: <param name="laser_scan_dir" type="bool" value="true"/> -->
   <!--    2. Set clockwise,        example: <param name="laser_scan_dir" type="bool" value="false"/> -->
@@ -172,7 +174,8 @@ sudo chmod 777 /dev/ttyUSB0
 <arg name="topic_name" default="scan"/>
 <arg name="frame_id" default="base_laser"/>
 <arg name="port_name" default="/dev/ttyUSB0"/>
-<arg name="fix_to_base_link" default="true" />
+<arg name="port_baudrate" default="230400"/>
+<arg name="fix_to_base_link" default="true"/>
 
 <!-- ldldiar message publisher node -->
  <node name="LD06" pkg="ldlidar_stl_ros" type="ldlidar_stl_ros_node" output="screen" >
@@ -180,6 +183,7 @@ sudo chmod 777 /dev/ttyUSB0
   <param name="topic_name" value="$(arg topic_name)"/>
   <param name="frame_id" value="$(arg frame_id)"/>
   <param name="port_name" value ="$(arg port_name)"/>
+  <param name="port_baudrate" value ="$(arg port_baudrate)"/>
   <!-- Set laser scan directon: -->
   <!--    1. Set counterclockwise, example: <param name="laser_scan_dir" type="bool" value="true"/> -->
   <!--    2. Set clockwise,        example: <param name="laser_scan_dir" type="bool" value="false"/> -->

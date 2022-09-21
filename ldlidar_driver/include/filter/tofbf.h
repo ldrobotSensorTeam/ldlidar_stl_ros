@@ -1,6 +1,6 @@
 /**
  * @file tofbf.h
- * @author LDRobot (marketing1@ldrobot.com)
+ * @author LDRobot (support@ldrobot.com)
  * @brief  LiDAR near-range filtering algorithm
  *         This code is only applicable to LDROBOT LiDAR LD06 products 
  * sold by Shenzhen LDROBOT Co., LTD
@@ -22,28 +22,44 @@
 #ifndef __TOFBF_H_
 #define __TOFBF_H_
 
+#include <stdint.h>
+
+#include <vector>
 #include <math.h>
 
 #include <algorithm>
+#include <iostream>
 
-#include "pointdata.h"
+#include "ldlidar_datatype.h"
 
 namespace ldlidar {
 
+enum class FilterType{
+  NO_FILTER,
+  NEAR_FILTER,
+  NOISE_FILTER
+};
+
 class Tofbf {
  private:
-  const int kIntensityLow = 15;  // Low intensity threshold
-  const int kIntensitySingle = 220;  // Discrete points require higher intensity
-  const int kScanFrequency = 4500;  // Default scan frequency, to change, read
-                                    // according to radar protocol
+  FilterType filter_type_;
+  // Low intensity threshold
+  int intensity_low_;
+  // Discrete points require higher intensity
+  int intensity_single_;
+  // Default scan frequency, to change, read according to radar protocol
+  int scan_frequency_;
   double curr_speed_;
   Tofbf() = delete;
   Tofbf(const Tofbf &) = delete;
   Tofbf &operator=(const Tofbf &) = delete;
+  std::vector<PointData> NearFilter(const std::vector<PointData> &tmp) const;
+  std::vector<PointData> NoiseFilter(const std::vector<PointData> &tmp) const;
 
  public:
-  Tofbf(int speed);
-  std::vector<PointData> NearFilter(const std::vector<PointData> &tmp) const;
+  Tofbf(int speed, LDType type);
+  std::vector<PointData> Filter(const std::vector<PointData> &tmp) const;
+
   ~Tofbf();
 };
 

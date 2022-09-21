@@ -19,10 +19,12 @@
  * limitations under the License.
  */
 #include "ros_api.h"
-#include "lipkg.h"
+#include "ldlidar_driver.h"
 
-void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg, 
+void  ToLaserscanMessagePublish(ldlidar::Points2D& src, double lidar_spin_freq, 
     LaserScanSetting& setting, ros::Publisher& lidarpub);
+
+uint64_t GetSystemTimeStamp(void);
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "ldldiar_publisher");
@@ -31,81 +33,105 @@ int main(int argc, char **argv) {
   std::string product_name;
 	std::string topic_name;
 	std::string port_name;
+  int serial_port_baudrate;
   LaserScanSetting setting;
+  ldlidar::LDType type_name;
 	
   nh_private.getParam("product_name", product_name);
 	nh_private.getParam("topic_name", topic_name);
+  nh_private.param("frame_id", setting.frame_id, std::string("base_laser"));
 	nh_private.getParam("port_name", port_name);
-	nh_private.param("frame_id", setting.frame_id, std::string("base_laser"));
+  nh_private.param("port_baudrate", serial_port_baudrate, int(230400));
   nh_private.param("laser_scan_dir", setting.laser_scan_dir, bool(true));
   nh_private.param("enable_angle_crop_func", setting.enable_angle_crop_func, bool(false));
   nh_private.param("angle_crop_min", setting.angle_crop_min, double(0.0));
   nh_private.param("angle_crop_max", setting.angle_crop_max, double(0.0));
 
-  ldlidar::LiPkg *lidar_commh = new ldlidar::LiPkg();
-  ldlidar::CmdInterfaceLinux *cmd_port = new ldlidar::CmdInterfaceLinux();
+  ldlidar::LDLidarDriver* ldlidarnode = new ldlidar::LDLidarDriver();
 
-  ROS_INFO("[ldrobot] SDK Pack Version is:%s", lidar_commh->GetSdkVersionNumber().c_str());
-  ROS_INFO("[ldrobot] ROS param input:");
-  ROS_INFO("[ldrobot] <product_name>: %s", product_name.c_str());
-  ROS_INFO("[ldrobot] <topic_name>: %s", topic_name.c_str());
-  ROS_INFO("[ldrobot] <port_name>: %s", port_name.c_str());
-  ROS_INFO("[ldrobot] <frame_id>: %s", setting.frame_id.c_str());
-  ROS_INFO("[ldrobot] <laser_scan_dir>: %s", (setting.laser_scan_dir?"Counterclockwise":"Clockwise"));
-  ROS_INFO("[ldrobot] <enable_angle_crop_func>: %s", (setting.enable_angle_crop_func?"true":"false"));
-  ROS_INFO("[ldrobot] <angle_crop_min>: %f", setting.angle_crop_min);
-  ROS_INFO("[ldrobot] <angle_crop_max>: %f", setting.angle_crop_max);
+  ROS_INFO("LDLiDAR SDK Pack Version is: %s", ldlidarnode->GetLidarSdkVersionNumber().c_str());
+  ROS_INFO("ROS params input:");
+  ROS_INFO("<product_name>: %s", product_name.c_str());
+  ROS_INFO("<topic_name>: %s", topic_name.c_str());
+  ROS_INFO("<frame_id>: %s", setting.frame_id.c_str());
+  ROS_INFO("<port_name>: %s", port_name.c_str());
+  ROS_INFO("<port_baudrate>: %d", serial_port_baudrate);
+  ROS_INFO("<laser_scan_dir>: %s", (setting.laser_scan_dir?"Counterclockwise":"Clockwise"));
+  ROS_INFO("<enable_angle_crop_func>: %s", (setting.enable_angle_crop_func?"true":"false"));
+  ROS_INFO("<angle_crop_min>: %f", setting.angle_crop_min);
+  ROS_INFO("<angle_crop_max>: %f", setting.angle_crop_max);
 
-  if (port_name.empty()) {
-    ROS_ERROR("[ldrobot] input <port_name> param is null");
+  if (product_name == "LDLiDAR_LD06") {
+    type_name = ldlidar::LDType::LD_06; 
+  } else if (product_name == "LDLiDAR_LD19") {
+    type_name = ldlidar::LDType::LD_19;
+  } else {
+    ROS_ERROR("Error, input <product_name> is illegal.");
     exit(EXIT_FAILURE);
   }
 
-  cmd_port->SetReadCallback(std::bind(&ldlidar::LiPkg::CommReadCallback, lidar_commh, std::placeholders::_1, std::placeholders::_2));
-  
-  if (cmd_port->Open(port_name)) {
-    ROS_INFO("[ldrobot] open %s device %s is success", product_name.c_str(), port_name.c_str());
-  }else {
-    ROS_ERROR("[ldrobot] open %s device %s is fail", product_name.c_str(), port_name.c_str());
+  ldlidarnode->RegisterGetTimestampFunctional(std::bind(&GetSystemTimeStamp)); 
+
+  ldlidarnode->EnableFilterAlgorithnmProcess(true);
+
+  if (ldlidarnode->Start(type_name, port_name, serial_port_baudrate, ldlidar::COMM_SERIAL_MODE)) {
+    ROS_INFO("ldldiar node start is success");
+  } else {
+    ROS_ERROR("ldlidar node start is fail");
     exit(EXIT_FAILURE);
   }
+
+  if (ldlidarnode->WaitLidarCommConnect(500)) {
+    ROS_INFO("ldlidar communication is normal.");
+  } else {
+    ROS_ERROR("ldlidar communication is abnormal.");
+    exit(EXIT_FAILURE);
+  }
+
   
-  ros::Publisher lidar_pub = nh.advertise<sensor_msgs::LaserScan>(topic_name, 10);  // create a ROS topic
+  ros::Publisher lidar_pub = 
+      nh.advertise<sensor_msgs::LaserScan>(topic_name, 10);  // create a ROS topic
   
   ros::Rate r(10); //10hz
-
-  auto last_time = std::chrono::steady_clock::now();
-  bool recv_success_flag = false;
+  ldlidar::Points2D laser_scan_points;
+  double lidar_spin_freq;
+  bool is_get = false;
+  
   while (ros::ok()) {
-    if (lidar_commh->IsFrameReady()) {
-      lidar_commh->ResetFrameReady();
-      last_time = std::chrono::steady_clock::now();
-      ldlidar::Points2D laserscandata = lidar_commh->GetLaserScanData();
-      ToLaserscanMessagePublish(laserscandata, lidar_commh, setting, lidar_pub);
-      if (!recv_success_flag) {
-        recv_success_flag = true;
-        ROS_INFO("[ldrobot] start normal, pub lidar data");
-      }
-    }
 
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-last_time).count() > 1000) { 
-			ROS_ERROR("[ldrobot] lidar pub data is time out, please check lidar device");
-			exit(EXIT_FAILURE);
-		}
+    switch (ldlidarnode->GetLaserScanData(laser_scan_points, 1000)){
+      case ldlidar::LidarStatus::NORMAL: 
+        if (!is_get) {
+          is_get = true;
+          ROS_INFO("get ldlidar normal data and publish topic message.");
+        }
+        ldlidarnode->GetLidarSpinFreq(lidar_spin_freq);
+        ToLaserscanMessagePublish(laser_scan_points, lidar_spin_freq, setting, lidar_pub);
+        break;
+      case ldlidar::LidarStatus::ERROR:
+        ROS_ERROR("ldlidar driver error.");
+        break;
+      case ldlidar::LidarStatus::DATA_TIME_OUT:
+        ROS_ERROR("get ldlidar data is time out, please check your lidar device.");
+        break;
+      case ldlidar::LidarStatus::DATA_WAIT:
+        break;
+      default:
+        break;
+    }
 
     r.sleep();
   }
 
-  cmd_port->Close();
-  delete lidar_commh;
-  lidar_commh = nullptr;
-  delete cmd_port;
-  cmd_port = nullptr;
-  
+  ldlidarnode->Stop();
+
+  delete ldlidarnode;
+  ldlidarnode = nullptr;
+
   return 0;
 }
 
-void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg, 
+void  ToLaserscanMessagePublish(ldlidar::Points2D& src, double lidar_spin_freq, 
     LaserScanSetting& setting, ros::Publisher& lidarpub) {
   float angle_min, angle_max, range_min, range_max, angle_increment;
   float scan_time;
@@ -131,7 +157,7 @@ void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg,
   angle_increment = (angle_max - angle_min) / (float)(beam_size -1);
 
   // Calculate the number of scanning points
-  if (commpkg->GetSpeedOrigin() > 0) {
+  if (lidar_spin_freq > 0) {
     sensor_msgs::LaserScan output;
     output.header.stamp = start_scan_time;
     output.header.frame_id = setting.frame_id;
@@ -204,6 +230,13 @@ void  ToLaserscanMessagePublish(ldlidar::Points2D& src, ldlidar::LiPkg* commpkg,
     lidarpub.publish(output);
     end_scan_time = start_scan_time;
   } 
+}
+
+uint64_t GetSystemTimeStamp(void) {
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::nanoseconds> tp = 
+    std::chrono::time_point_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now());
+  auto tmp = std::chrono::duration_cast<std::chrono::nanoseconds>(tp.time_since_epoch());
+  return ((uint64_t)tmp.count());
 }
 
 /********************* (C) COPYRIGHT SHENZHEN LDROBOT CO., LTD *******END OF
