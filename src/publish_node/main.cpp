@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  if (ldlidarnode->WaitLidarCommConnect(500)) {
+  if (ldlidarnode->WaitLidarCommConnect(3000)) {
     ROS_INFO("ldlidar communication is normal.");
   } else {
     ROS_ERROR("ldlidar communication is abnormal.");
@@ -95,16 +95,12 @@ int main(int argc, char **argv) {
   ros::Rate r(10); //10hz
   ldlidar::Points2D laser_scan_points;
   double lidar_spin_freq;
-  bool is_get = false;
+  ROS_INFO("Publish topic message:ldlidar scan data .");
   
   while (ros::ok()) {
 
-    switch (ldlidarnode->GetLaserScanData(laser_scan_points, 1000)){
+    switch (ldlidarnode->GetLaserScanData(laser_scan_points, 1500)){
       case ldlidar::LidarStatus::NORMAL: 
-        if (!is_get) {
-          is_get = true;
-          ROS_INFO("get ldlidar normal data and publish topic message.");
-        }
         ldlidarnode->GetLidarSpinFreq(lidar_spin_freq);
         ToLaserscanMessagePublish(laser_scan_points, lidar_spin_freq, setting, lidar_pub);
         break;
