@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
   ldlidarnode->EnableFilterAlgorithnmProcess(true);
 
   if (ldlidarnode->Start(type_name, port_name, serial_port_baudrate, ldlidar::COMM_SERIAL_MODE)) {
-    ROS_INFO("ldldiar node start is success");
+    ROS_INFO("ldlidar node start is success");
   } else {
     ROS_ERROR("ldlidar node start is fail");
     exit(EXIT_FAILURE);
@@ -94,18 +94,15 @@ int main(int argc, char **argv) {
   
   ros::Rate r(10); //10hz
   ldlidar::Points2D laser_scan_points;
-  double lidar_spin_freq;
+  double lidar_scan_freq;
   ROS_INFO("Publish topic message:ldlidar scan data .");
   
   while (ros::ok()) {
 
     switch (ldlidarnode->GetLaserScanData(laser_scan_points, 1500)){
       case ldlidar::LidarStatus::NORMAL: 
-        ldlidarnode->GetLidarSpinFreq(lidar_spin_freq);
-        ToLaserscanMessagePublish(laser_scan_points, lidar_spin_freq, setting, lidar_pub);
-        break;
-      case ldlidar::LidarStatus::ERROR:
-        ROS_ERROR("ldlidar driver error.");
+        ldlidarnode->GetLidarScanFreq(lidar_scan_freq);
+        ToLaserscanMessagePublish(laser_scan_points, lidar_scan_freq, setting, lidar_pub);
         break;
       case ldlidar::LidarStatus::DATA_TIME_OUT:
         ROS_ERROR("get ldlidar data is time out, please check your lidar device.");
